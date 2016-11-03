@@ -1,0 +1,175 @@
+Test master and replica with Docker
+-----------------------------------
+
+* Master
+
+[vagrant@localhost centos]$ docker run -d -p 127.0.0.1:11211:11211 --name repcached tangfeixiong/repcached /bin/memcached -u root
+162abd2d5314ce7fec3f0096ea465d04ff181d020ead6b45a2e046ef1143f312
+[vagrant@localhost centos]$ docker logs repcached
+[vagrant@localhost centos]$ telnet 127.0.0.1 11211
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is '^]'.
+set foo 0 0 3
+bar
+STORED
+get foo
+VALUE foo 0 3
+bar
+END
+stat
+ERROR
+STAT
+ERROR
+STATS
+ERROR
+stats
+STAT pid 1
+STAT uptime 71
+STAT time 1478127572
+STAT version 1.4.13_64_g0e40526
+STAT libevent 1.4.13-stable
+STAT pointer_size 64
+STAT rusage_user 0.038635
+STAT rusage_system 0.049260
+STAT curr_connections 11
+STAT total_connections 12
+STAT connection_structures 12
+STAT reserved_fds 20
+STAT cmd_get 1
+STAT cmd_set 1
+STAT cmd_flush 0
+STAT cmd_touch 0
+STAT get_hits 1
+STAT get_misses 0
+STAT delete_misses 0
+STAT delete_hits 0
+STAT incr_misses 0
+STAT incr_hits 0
+STAT decr_misses 0
+STAT decr_hits 0
+STAT cas_misses 0
+STAT cas_hits 0
+STAT cas_badval 0
+STAT touch_hits 0
+STAT touch_misses 0
+STAT auth_cmds 0
+STAT auth_errors 0
+STAT bytes_read 55
+STAT bytes_written 54
+STAT limit_maxbytes 67108864
+STAT accepting_conns 1
+STAT listen_disabled_num 0
+STAT threads 4
+STAT conn_yields 0
+STAT hash_power_level 16
+STAT hash_bytes 524288
+STAT hash_is_expanding 0
+STAT expired_unfetched 0
+STAT evicted_unfetched 0
+STAT replication MASTER
+STAT repcached_version 2.3.1
+STAT repcached_qi_free 8192
+STAT bytes 71
+STAT curr_items 1
+STAT total_items 1
+STAT evictions 0
+STAT reclaimed 0
+END
+stats slabs
+STAT 1:chunk_size 96
+STAT 1:chunks_per_page 10922
+STAT 1:total_pages 1
+STAT 1:total_chunks 10922
+STAT 1:used_chunks 1
+STAT 1:free_chunks 0
+STAT 1:free_chunks_end 10921
+STAT 1:mem_requested 71
+STAT 1:get_hits 1
+STAT 1:cmd_set 1
+STAT 1:delete_hits 0
+STAT 1:incr_hits 0
+STAT 1:decr_hits 0
+STAT 1:cas_hits 0
+STAT 1:cas_badval 0
+STAT 1:touch_hits 0
+STAT active_slabs 1
+STAT total_malloced 1048512
+END
+stat items
+ERROR
+stats items     
+STAT items:1:number 1
+STAT items:1:age 59
+STAT items:1:evicted 0
+STAT items:1:evicted_nonzero 0
+STAT items:1:evicted_time 0
+STAT items:1:outofmemory 0
+STAT items:1:tailrepairs 0
+STAT items:1:reclaimed 0
+STAT items:1:expired_unfetched 0
+STAT items:1:evicted_unfetched 0
+END
+stats cachedump 1 0
+ITEM foo [3 b; 1478127501 s]
+END
+help
+ERROR
+HELP
+ERROR
+h
+ERROR
+quit
+Connection closed by foreign host.
+
+[vagrant@localhost memcached]$ docker inspect --format='{{.NetworkSettings.Networks.bridge.IPAddress}}' repcached
+172.17.0.2
+
+* Replica
+
+[vagrant@localhost centos]$ docker run -d -p 127.0.0.1::11211 --name repcached1 tangfeixiong/repcached /bin/memcached -u root -x "172.17.0.2"
+c9b0c3e4439cd217d339b2a91870fd540bf8e6cb00030f5331846947059de148
+[vagrant@localhost centos]$ docker logs repcached1
+[vagrant@localhost centos]$ sudo netstat -tpnl
+
+[vagrant@localhost centos]$ sudo netstat -tpnl
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name    
+tcp        0      0 127.0.0.1:11211         0.0.0.0:*               LISTEN      13819/docker-proxy  
+tcp        0      0 127.0.0.1:2379          0.0.0.0:*               LISTEN      3894/etcd           
+tcp        0      0 127.0.0.1:2380          0.0.0.0:*               LISTEN      3894/etcd           
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      689/sshd            
+tcp        0      0 127.0.0.1:32794         0.0.0.0:*               LISTEN      14556/docker-proxy  
+tcp6       0      0 :::22                   :::*                    LISTEN      689/sshd            
+[vagrant@localhost centos]$ telnet 127.0.0.1 32794
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is '^]'.
+get foo
+VALUE foo 0 3
+bar
+END
+set bazz 0 0 3
+baz
+STORED
+quit
+Connection closed by foreign host.
+
+* Verify from master
+
+[vagrant@localhost centos]$ telnet 127.0.0.1 11211
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is '^]'.
+get bazz
+VALUE bazz 0 3
+baz
+END
+get boor
+END
+get foo
+VALUE foo 0 3
+bar
+END
+quit
+Connection closed by foreign host.

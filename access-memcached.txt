@@ -1,0 +1,164 @@
+
+[memcached man page](https://linux.die.net/man/1/memcached)
+
+These programs follow the usual GNU command line syntax. A summary of options is included below.
+-s <file>
+Unix socket path to listen on (disables network support).
+-a <perms>
+Permissions (in octal format) for Unix socket created with -s option.
+-l <ip_addr>
+Listen on <ip_addr>; default to INADDR_ANY. This is an important option to consider as there is no other way to secure the installation. Binding to an internal or firewalled network interface is suggested.
+-d
+Run memcached as a daemon.
+-u <username>
+Assume the identity of <username> (only when run as root).
+-m <num>
+Use <num> MB memory max to use for object storage; the default is 64 megabytes.
+-c <num>
+Use <num> max simultaneous connections; the default is 1024.
+-R <num>
+This option seeks to prevent client starvation by setting a limit to the number of sequential requests the server will process from an individual client connection. Once a connection has exceeded this value, the server will attempt to process I/O on other connections before handling any further request from this connection. The default value for this option is 20.
+-k
+Lock down all paged memory. This is a somewhat dangerous option with large caches, so consult the README and memcached homepage for configuration suggestions.
+-p <num>
+Listen on TCP port <num>, the default is port 11211.
+-U <num>
+Listen on UDP port <num>, the default is port 11211, 0 is off.
+-M
+Disable automatic removal of items from the cache when out of memory. Additions will not be possible until adequate space is freed up.
+-r
+Raise the core file size limit to the maximum allowable.
+-f <factor>
+Use <factor> as the multiplier for computing the sizes of memory chunks that items are stored in. A lower value may result in less wasted memory depending on the total amount of memory available and the distribution of item sizes. The default is 1.25.
+-n <size>
+Allocate a minimum of <size> bytes for the item key, value, and flags. The default is 48. If you have a lot of small keys and values, you can get a significant memory efficiency gain with a lower value. If you use a high chunk growth factor (-f option), on the other hand, you may want to increase the size to allow a bigger percentage of your items to fit in the most densely packed (smallest) chunks.
+-C
+Disable the use of CAS (and reduce the per-item size by 8 bytes).
+-h
+Show the version of memcached and a summary of options.
+-v
+Be verbose during the event loop; print out errors and warnings.
+-vv
+Be even more verbose; same as -v but also print client commands and responses.
+-i
+Print memcached and libevent licenses.
+-P <filename>
+Print pidfile to <filename>, only used under -d option.
+-t <threads>
+Number of threads to use to process incoming requests. This option is only meaningful if memcached was compiled with thread support enabled. It is typically not useful to set this higher than the number of CPU cores on the memcached server. The default is 4.
+-D <char>
+Use <char> as the delimiter between key prefixes and IDs. This is used for per-prefix stats reporting. The default is ":" (colon). If this option is specified, stats collection is turned on automatically; if not, then it may be turned on by sending the "stats detail on" command to the server.
+-L
+Try to use large memory pages (if available). Increasing the memory page size could reduce the number of TLB misses and improve the performance. In order to get large pages from the OS, memcached will allocate the total item-cache in one large chunk. Only available if supported on your OS.
+-B <proto>
+Specify the binding protocol to use. By default, the server will autonegotiate client connections. By using this option, you can specify the protocol clients must speak. Possible options are "auto" (the default, autonegotiation behavior), "ascii" and "binary".
+-I <size>
+Override the default size of each slab page. Default is 1mb. Default is 1m, minimum is 1k, max is 128m. Adjusting this value changes the item size limit. Beware that this also increases the number of slabs (use -v to view), and the overal memory usage of memcached.
+
+
+
+
+[telnet memcached](http://www.alphadevx.com/a/90-Accessing-Memcached-from-the-command-line)
+
+[jcollins@redhat memcached]$ telnet localhost 11211
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+
+quit
+Connection closed by foreign host.
+
+
+stats
+STAT pid 22622
+STAT uptime 69300
+STAT time 1296733424
+STAT version 1.2.5
+STAT pointer_size 32
+STAT rusage_user 0.117982
+STAT rusage_system 0.145977
+STAT curr_items 3
+STAT total_items 10
+STAT bytes 1174
+STAT curr_connections 2
+STAT total_connections 13
+STAT connection_structures 3
+STAT cmd_get 10
+STAT cmd_set 10
+STAT get_hits 9
+STAT get_misses 1
+STAT evictions 0
+STAT bytes_read 4593
+STAT bytes_written 7388
+STAT limit_maxbytes 268435456
+STAT threads 1
+END
+
+
+stats slabs
+STAT 1:chunk_size 88
+STAT 1:chunks_per_page 11915
+STAT 1:total_pages 1
+STAT 1:total_chunks 11915
+STAT 1:used_chunks 11915
+STAT 1:free_chunks 0
+STAT 1:free_chunks_end 11914
+STAT 6:chunk_size 296
+STAT 6:chunks_per_page 3542
+STAT 6:total_pages 1
+STAT 6:total_chunks 3542
+STAT 6:used_chunks 3541
+STAT 6:free_chunks 1
+STAT 6:free_chunks_end 3541
+STAT 7:chunk_size 376
+STAT 7:chunks_per_page 2788
+STAT 7:total_pages 1
+STAT 7:total_chunks 2788
+STAT 7:used_chunks 2788
+STAT 7:free_chunks 0
+STAT 7:free_chunks_end 2787
+STAT 8:chunk_size 472
+STAT 8:chunks_per_page 2221
+STAT 8:total_pages 1
+STAT 8:total_chunks 2221
+STAT 8:used_chunks 2220
+STAT 8:free_chunks 1
+STAT 8:free_chunks_end 2218
+STAT active_slabs 4
+STAT total_malloced 4193552
+END
+
+
+stats items
+STAT items:1:number 1
+STAT items:1:age 35
+STAT items:1:evicted 0
+STAT items:1:outofmemory 0
+STAT items:7:number 1
+STAT items:7:age 69596
+STAT items:7:evicted 0
+STAT items:7:outofmemory 0
+STAT items:8:number 2
+STAT items:8:age 69627
+STAT items:8:evicted 0
+STAT items:8:outofmemory 0
+END
+
+
+stats cachedump 1 0
+ITEM testkey [9 b; 1296857316 s]
+END
+
+
+get testkey
+VALUE testkey 0 9
+test data
+END
+
+
+delete testkey
+DELETED
+END
+
+
+[Memcached Cheat Sheet](http://lzone.de/cheat-sheet/memcached)
